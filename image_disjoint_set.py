@@ -46,10 +46,15 @@ class image_disjoint_set:
 	# @return The parent index of the element (which subset it belongs to)
 	#  
 	def find(self, x):
-		parent = self.elements[x].parent
-		if parent != x:
-			parent = self.find(parent)
-		return parent	
+		# parent = self.elements[x].parent
+		# if parent != x:
+		# 	parent = self.find(parent)
+		# return parent	
+		y = x
+		while y != self.elements[y].parent:
+			y = self.elements[y].parent
+		self.elements[x].parent = y
+		return y
 
 	# 
 	# Combine two elements into the same set
@@ -68,13 +73,13 @@ class image_disjoint_set:
 		# If x and y are in the same set, merge them
 		if x_root.rank < y_root.rank:
 			x_root.parent = y_root.parent
-			x_root.size += 1
+			y_root.size += x_root.size
 		elif y_root.rank < x_root.rank:
 			y_root.parent = x_root.parent
-			y_root.size += 1
+			x_root.size += y_root.size
 		else:
 			y_root.parent = x_root.parent
-			y_root.size += 1
+			x_root.size += y_root.size
 			x_root.rank = x_root.rank + 1
 
 		self.num_sets -= 1

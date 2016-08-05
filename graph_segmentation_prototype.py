@@ -12,12 +12,13 @@ import image_graph
 import image_disjoint_set
 
 # Import numpy and scipy
-import numpy as np
 from scipy.ndimage import filters
+import numpy as np
 
 # Import OpenCV and image
 import cv2
-import Image
+from PIL import Image
+from pylab import *
 
 # 
 # Function that returns the index of the vectorized version of the image index from the current row and column
@@ -43,6 +44,7 @@ def diff_L2(image, index_a, index_b):
 	return ((image[index_a[0], index_a[1], 0] - image[index_b[0], index_b[1], 0])**2 + \
 		    (image[index_a[0], index_a[1], 1] - image[index_b[0], index_b[1], 1])**2 + \
 		    (image[index_a[0], index_a[1], 2] - image[index_b[0], index_b[1], 2])**2)**0.5 
+
 # 
 # Function for generating the graph to be cut
 # 
@@ -55,8 +57,8 @@ def generate_graph(image, weight_fxn):
 	height, width, channels = image.shape
 	graph = image_graph.image_graph()
 
-	for row in xrange(height):
-		for col in xrange(width):
+	for row in range(height):
+		for col in range(width):
 			current_node = get_flattened_index(row, col, image.shape)
 			current_index = (row, col)
 
@@ -97,7 +99,7 @@ def segment_image(image, sigma, th, min_size):
 	image = np.array(image)
 	height, width, channels = image.shape
 	num_vertices = height * width
-	print "Height: {}, Width: {}, Channels: {}".format(height, width, channels)
+	print("Height: {}, Width: {}, Channels: {}".format(height, width, channels))
 
 	# Smooth out the RGB channels in order to reduce noise in the image
 	for i in range(3):
@@ -130,16 +132,14 @@ def segment_image(image, sigma, th, min_size):
 				a_parent = disjoint_set.find(a)
 				thresholds[a_parent] = edge.weight + threshold(disjoint_set.get_set_size(a_parent), th)
 
-	# # Merge very small components
-	# for i in range(len(graph)):
-	# 	edge = sorted_edges[i]
-	# 	a = disjoint_set.find(edge.a)
-	# 	b = disjoint_set.find(edge.b)
+	# Merge very small components
+	for i in range(len(graph)):
+		edge = sorted_edges[i]
+		a = disjoint_set.find(edge.a)
+		b = disjoint_set.find(edge.b)
 
-	# 	print("Element a: {}, b: {}".format(disjoint_set.elements[a], disjoint_set.elements[b]))
-	# 	# print("Set Sizes for a:{}, b:{}".format(disjoint_set.get_set_size(a), disjoint_set.get_set_size(b)))
-	# 	if(a != b and (disjoint_set.get_set_size(a) < min_size or disjoint_set.get_set_size(b) < min_size)):
-	# 		disjoint_set.union(a,b)
+		if(a != b and (disjoint_set.get_set_size(a) < min_size or disjoint_set.get_set_size(b) < min_size)):
+			disjoint_set.union(a,b)
 	
 	print("Finished generating Disjoint set.")
 	print("Number of sets generated: {}", disjoint_set.num_sets)
@@ -170,9 +170,14 @@ if __name__ == "__main__":
 
 	# Parameters
 	sigma = 0.5
-	min_size = 20
-	th = 430 # Large th results in larget components
+	min_size = 50
+	th = 1500 # Large th results in larget components
 
 	seg_image = segment_image(im, sigma, th, min_size)
 
-	seg_image.show()
+	fig = figure()
+	fig.add_subplot(2, 1, 1)
+	imshow(im)
+	fig.add_subplot(2, 1, 2)
+	imshow(seg_image)
+	show()

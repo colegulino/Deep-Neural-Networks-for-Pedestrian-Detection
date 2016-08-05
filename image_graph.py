@@ -45,7 +45,7 @@ class image_graph:
 	# 
 	def get_sorted_edge_list(self):
 		self.edge_list = [value for key, value in self.edges.items()]
-		return sorted(self.edge_list, key=lambda edge: edge.weight, reverse=True)
+		return sorted(self.edge_list, key=lambda edge: edge.weight, reverse=False)
 
 	# 
 	# Return the edge dict
