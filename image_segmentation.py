@@ -28,7 +28,7 @@ def get_flattened_index(row, col, shape):
 	return row * width + col
 
 # 
-# A dissimiliarity function for two pixels
+# A dissimiliarity function for two pixels using L2 distance between pixels
 # 
 # @param image The image where the pixels exist
 # @param index_a The shape (row, col) of the first pixel
@@ -38,7 +38,23 @@ def get_flattened_index(row, col, shape):
 def diff_L2(image, index_a, index_b):
 	return ((image[index_a[0], index_a[1], 0] - image[index_b[0], index_b[1], 0])**2 + \
 		    (image[index_a[0], index_a[1], 1] - image[index_b[0], index_b[1], 1])**2 + \
-		    (image[index_a[0], index_a[1], 2] - image[index_b[0], index_b[1], 2])**2)**0.5 
+		    (image[index_a[0], index_a[1], 2] - image[index_b[0], index_b[1], 2])**2)**0.5
+
+#
+# A dissimilarity function between image pixels using exponential
+# 
+# @param image The image where the pixels exist
+# @param index_a The index (row, col) of the first pixel
+# @param index_b The index (row, col) of the second pixel
+# @return A measure of the dissimilarity of the two pixels
+# 
+kappa = 2
+sig = 1e2
+def exp_diff(image, index_a, index_b):
+	val_a = image[index_a[0], index_a[1], :]
+	val_b = image[index_b[0], index_b[1], :]
+
+	return kappa * exp(-1.0 * sum((val_a - val_b)**2) / sig)
 
 # 
 # Function for generating the graph to be cut
@@ -94,6 +110,12 @@ def segment_image(image, sigma, th, min_size):
 	image = np.array(image)
 	height, width, channels = image.shape
 	num_vertices = height * width
+
+	# Normalize the images
+	image = image.reshape((-1, 3))
+	image = image / np.linalg.norm(image)
+	image = image.reshape((height, width, channels))
+
 	print("Height: {}, Width: {}, Channels: {}".format(height, width, channels))
 
 	# Smooth out the RGB channels in order to reduce noise in the image
@@ -101,7 +123,7 @@ def segment_image(image, sigma, th, min_size):
 		image[:,:,i] = filters.gaussian_filter(image[:,:,1], sigma)
 
 	print("Generating graph...")
-	graph = generate_graph(image, diff_L2)
+	graph = generate_graph(image, exp_diff)
 	print("Finished generated graph.")
 
 	print("Generating Disjoint Set from Graph...")
@@ -144,6 +166,7 @@ def segment_image(image, sigma, th, min_size):
 
 	print("Generating segmented image")
 	seg_image = np.ndarray(shape=image.shape)
+	pixel_class = np.ndarray(shape=(height, width))
 
 	for row in range(height):
 		for col in range(width):
@@ -153,9 +176,10 @@ def segment_image(image, sigma, th, min_size):
 			seg_image[row, col, 0] = color[0]
 			seg_image[row, col, 1] = color[1]
 			seg_image[row, col, 2] = color[2]
+			pixel_class[row, col] = parent
 
 	seg_image = np.uint8(seg_image)
-	return Image.fromarray(seg_image)
+	return Image.fromarray(seg_image), pixel_class, disjoint_set
 
 if __name__ == "__main__":
 	# Show the image before segmentation
@@ -167,9 +191,9 @@ if __name__ == "__main__":
 	# Parameters
 	sigma = 0.5
 	min_size = 50
-	th = 1500 # Large th results in larget components
+	th = 500 # Large th results in larget components
 
-	seg_image = segment_image(im, sigma, th, min_size)
+	seg_image, pixel_class = segment_image(im, sigma, th, min_size)
 
 	fig = figure()
 	fig.add_subplot(2, 1, 1)
