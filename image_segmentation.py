@@ -106,8 +106,6 @@ def generate_graph(image, weight_fxn):
 # @return A segmented image and the number of current connected components
 # 
 def segment_image(image, sigma, th, min_size):
-	image = image.convert('RGB')
-	image = np.array(image)
 	height, width, channels = image.shape
 	num_vertices = height * width
 
@@ -128,7 +126,6 @@ def segment_image(image, sigma, th, min_size):
 
 	print("Generating Disjoint Set from Graph...")
 	disjoint_set = image_disjoint_set.image_disjoint_set(num_elements=num_vertices)
-	print("Num vertices: {}".format(num_vertices))
 
 	def threshold(size, th):
 		return th / size

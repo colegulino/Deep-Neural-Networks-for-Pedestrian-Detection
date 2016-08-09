@@ -84,6 +84,8 @@ class image_disjoint_set:
 
 		self.num_sets -= 1
 
+		# print("Num sets: {}".format(self.num_sets))
+
 if __name__ == "__main__":
 	# Test the disjoint set class
 	
@@ -98,8 +100,8 @@ if __name__ == "__main__":
 
 	ds.union(1,2)
 
-	print("Size of set 1 (should be 1): {}".format(ds.get_set_size(1)))
-	print("Size of set 2 (should be 2): {}".format(ds.get_set_size(2)))
+	print("Size of set 1 (should be 2): {}".format(ds.get_set_size(1)))
+	print("Size of set 2 (should be 1): {}".format(ds.get_set_size(2)))
 
 	print("Number of sets (should be 9): {}".format(ds.num_sets))
 
