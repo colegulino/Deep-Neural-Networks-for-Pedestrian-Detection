@@ -5,6 +5,7 @@
 
 import image_segmentation
 import simularity_set
+import image_print_utils
 
 from PIL import Image
 from pylab import *
@@ -31,17 +32,21 @@ if __name__ == "__main__":
 	print("Get simularity set")
 	sim_set = simularity_set.simularity_set(region_image=pixel_class, image=im, disjoint_set=disjoint_set)
 
-	bbox = None
-
+	count = 0
+	reg_a = None
+	reg_b = None
 	for region in sim_set.region_set:
-		bbox = sim_set.create_bounding_box(region)
-		break
+		count += 1
+		if count == 5:
+			reg_a = region
 
-	fig = figure()
-	# fig.add_subplot(2, 1, 1)
-	# imshow(im)
-	# fig.add_subplot(2, 1, 2)
-	rect = Rectangle([bbox.x0, bbox.y0], bbox.width, bbox.height, color=[0,0,0], fill=False)
-	fig.patches.append(rect)
-	imshow(seg_image)
-	show()
+		if count == 6:
+			reg_b = region
+			break
+
+	hist_a = sim_set.calculate_color_hist_of_region(reg_a)
+
+	for c in hist_a:
+		print(c)
+
+	# image_print_utils.print_bounding_box_region_and_seg_image(reg, pixel_class, sim_set, seg_image)

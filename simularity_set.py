@@ -4,6 +4,7 @@
 
 import image_segmentation
 import numpy as np
+import cv2
 
 class bounding_box:
 	def __init__(self, region, row_start, col_start, height, width):
@@ -104,10 +105,8 @@ class simularity_set:
 
 		# Determine if there are any more regions from set in the sim_set	
 		if({item for item in self.sim_set if s[0] in item} == set()):
-			print("Delete")
 			self.region_set.remove(s[0])
 		if({item for item in self.sim_set if s[1] in item} == set()):
-			print("Delete")
 			self.region_set.remove(s[1])
 
 	# 
@@ -156,6 +155,29 @@ class simularity_set:
 		return bounding_box((box_a.region, box_b.region), row_start, col_start, height, width)
 
 	# 
+	# Gets a mask the shape of the image with 1s where the region exists
+	# 
+	# @param region Region to get the mask for
+	# @return a mask based on where region is in the image
+	# 
+	def get_region_mask(self, region):
+		mask = (self.region_image == region).astype(int)
+		mask_im = np.array(mask * 255, dtype = np.uint8)
+		mask_im = cv2.adaptiveThreshold(mask_im, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 3, 0)
+		return mask_im
+
+	# 
+	# Calculates a color histogram based on the region
+	# 
+	# @param region Region to get the color histogram for
+	# @return A color histogram based on the region with 25 bins per channel
+	# 
+	def calculate_color_hist_of_region(self, region):
+		mask = self.get_region_mask(region)
+		print("Shape of image: {} | Shape of mask: {}".format(self.image.shape, mask.shape))
+		return cv2.calcHist([self.image], [0, 1, 2], mask, [25, 25, 25], [0, 256, 0, 256, 0, 256])
+
+	# 
 	# A simularity function for regions based on size of the regions.
 	# Encourages small regions to merge first
 	# 
@@ -168,6 +190,43 @@ class simularity_set:
 		b = self.disjoint_set.find(region_b)
 
 		return 1 - ((a.size + b.size) / self.image_size)
+
+	# 
+	# A simularity function for regions based on the fill of the regions
+	# Ensures that combined shapes make a natural shape
+	# 
+	# @param region_a One region to get a simularity for
+	# @param region_b One region to get a simularity for
+	# @return A real valued number that describes the simularity of the two regions
+	# 
+	def s_fill(self, region_a, region_b):
+		a = self.disjoint_set.find(region_a)
+		b = self.disjoint_set.find(region_b)
+
+		bbox_a = self.create_bounding_box(a)
+		bbox_b = self.create_bounding_box(b)
+		bbox_ab = self.combine_bounding_boxes(bbox_a, bbox_b)
+
+		return 1 - ((len(bbox_ab) - a.size - b.size) / self.image_size)
+
+	# 
+	# A simularity function for regions based on color simularity
+	# 
+	# @param region_a One region to get a simularity for
+	# @param region_b One region to get a simularity for
+	# @return A real valued number that describes the simularity of the two regions
+	# 
+	def s_color(self, region_a, region_b):
+		a = self.disjoint_set.find(region_a)
+		b = self.disjoint_set.find(region_b)
+
+		hist_a = self.calculate_color_hist_of_region(a)
+		hist_a = hist_a.flatten()
+		hist_a = hist_a / np.linalg.norm(hist_a)
+
+		hist_b = self.calculate_color_hist_of_region(b)
+		hist_b = hist_b.flatten()
+		hist_b = hist_b / np.linalg.norm(hist_b)
 
 if __name__ == "__main__":
 	# Show the image before segmentation
