@@ -115,21 +115,20 @@ def get_rgb_histograms(image, bins=[256], ranges=[0,256], mask=None):
 # 
 def get_sift_features(image, sigma=1, no_bins=10, th=0.1, mask=None):
 	# Apply mask if there is one
-	if mask != None:
+	im = np.copy(image)
+	# if mask != None:
+	if True:
 		for i in range(3):
-			image[:,:,i] = mask * image[:,:,i]
+			im[:,:,i] = mask * image[:,:,i]
 
-	im = Image.fromarray(image, 'RGB')
-	im.show() 
-
-	shape = image.shape
+	shape = im.shape
 	channels = shape[2]
 
 	# Get gradients, orientations and magnitudes of gradients
 	gradients = {}
 	thresholds = {}
 	for channel in range(channels):
-		gradients[channel] = image_utils.get_derivative_orientation_and_mag(image[:,:,channel], sigma)
+		gradients[channel] = image_utils.get_derivative_orientation_and_mag(im[:,:,channel], sigma)
 		thresholds[channel] = th * np.max(gradients[channel].mag)
 
 	# get orientation ranges for each bin
@@ -158,10 +157,9 @@ def get_sift_features(image, sigma=1, no_bins=10, th=0.1, mask=None):
 	for channel in range(channels):		
 		hist = np.append(hist, np.sum(histograms[channel], axis=(0,1)))
 
-	print("HIST")
-	for val in hist:
-		print val
-	print("Norm of Hist: {}".format(np.linalg.norm(hist)))
+	if(np.linalg.norm(hist) == 0):
+		print("Norm of the histogram = 0. Histogram is invalid.")
+
 	hist = hist / np.linalg.norm(hist)
 
 	return np.array(hist).astype(np.float32)

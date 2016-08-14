@@ -24,19 +24,24 @@ def print_bounding_box_region_and_seg_image(region, region_image, sim_set, seg_i
 	class_mask = (region_image == region).astype(int)
 
 	fig = figure()
+
+	# Show Segmented Image
 	seg_image_full = fig.add_subplot(2, 1, 1)
 	seg_image_show = seg_image_full.imshow(seg_image)
+
+	# Show segmented image with mask
+	seg_image_mask = fig.add_subplot(2, 1, 2)
 	seg_im = seg_image.convert('RGB')
 	seg_im = np.array(seg_im)
 	for i in range(3):
 		seg_im[:,:,i] = class_mask * seg_im[:,:,i]
-
-	seg_image_mask = fig.add_subplot(2, 1, 2)
-
 	seg_im = Image.fromarray(seg_im)
 	seg_image_mask.imshow(seg_im)
+
+	# Show bounding box around region without mask
 	rect = Rectangle((bbox.x0, bbox.y0), bbox.width, bbox.height, ec='red', fill=False)
 	seg_image_mask.add_patch(rect)
+
 	show()
 
 # 
@@ -50,7 +55,7 @@ def print_region_histogram(region, image, sim_set):
 	# Example from: http://docs.opencv.org/3.1.0/d1/db7/tutorial_py_histogram_begins.html#gsc.tab=0
 	colors = ('b', 'g', 'r')
 
-	mask = sim_set.get_region_mask(region)
+	mask = sim_set.get_region_mask(region, dtype=np.uint8)
 
 	r_hist, g_hist, b_hist = histogram_utils.get_rgb_histograms(image, [256], [0, 256], mask)
 

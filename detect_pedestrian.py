@@ -33,6 +33,14 @@ if __name__ == "__main__":
 	print("Get simularity set")
 	sim_set = simularity_set.simularity_set(region_image=pixel_class, image=im, disjoint_set=disjoint_set)
 
+	elems = disjoint_set.elements
+
+	for key in elems:
+		parent = disjoint_set.elements[key].parent
+		# print("Region: {} | Size: {}".format(disjoint_set.elements[parent].parent, disjoint_set.elements[parent].size))
+		if disjoint_set.elements[parent].size == 1:
+			print("Size of 1 for region: {}".format(parent))
+
 	count = 0
 	reg_a = None
 	reg_b = None
@@ -45,16 +53,17 @@ if __name__ == "__main__":
 			reg_b = region
 			break
 
-	bins = [25,25,25]
-	ranges = [0, 256, 0, 256, 0, 256]
-	hist_a = sim_set.calculate_color_hist_of_region(reg_a, bins, ranges)
+	# bins = [25,25,25]
+	# ranges = [0, 256, 0, 256, 0, 256]
+	# hist_b = sim_set.calculate_color_hist_of_region(reg_b, bins, ranges)
+	# print("Norm of color histogram: {}".format(np.linalg.norm(hist_b)))
 
-	# image_print_utils.print_bounding_box_region_and_seg_image(reg_a, pixel_class, sim_set, seg_image)
-	# image_print_utils.print_bounding_box_region_and_seg_image(reg_b, pixel_class, sim_set, seg_image)
+	# image_print_utils.print_bounding_box_region_and_seg_image(reg_a, sim_set.region_image, sim_set, seg_image)
+	# image_print_utils.print_bounding_box_region_and_seg_image(reg_b, sim_set.region_image, sim_set, seg_image)
 
 	s_val = sim_set.s_regions(reg_a, reg_b)
 
-	# print("Simularity of region:{} and region:{} is: {}".format(reg_a, reg_b, s_val))
+	print("Simularity of region:{} and region:{} is: {}".format(reg_a, reg_b, s_val))
 	# print hist_a.shape
-	# image_print_utils.print_region_histogram(reg_a, im, sim_set)
+	# image_print_utils.print_region_histogram(reg_b, im, sim_set)
 	# image_print_utils.print_bounding_box_region_and_seg_image(reg, pixel_class, sim_set, seg_image)

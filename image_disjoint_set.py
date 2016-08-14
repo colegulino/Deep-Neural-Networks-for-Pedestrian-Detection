@@ -15,7 +15,7 @@ class image_disjoint_set_element:
 class image_disjoint_set:
 	def __init__(self, num_elements=0):
 		if(num_elements <= 0):
-			raise ValueError('Number of elements must be >= 0. Num elements provided is: {}'.format(num_elemets))
+			raise ValueError('Number of elements must be > 0. Num elements provided is: {}'.format(num_elemets))
 
 		self.num_sets = num_elements
 		self.elements = {}
@@ -81,10 +81,21 @@ class image_disjoint_set:
 			y_root.parent = x_root.parent
 			x_root.size += y_root.size
 			x_root.rank = x_root.rank + 1
+		
+		# if x_root.rank > y_root.rank:
+		# 	y_root.parent = x_root.parent
+		# 	x_root.size += y_root.size
+		# else:
+		# 	x_root.parent = y_root.parent
+		# 	y_root.size += x_root.size
+		# 	if x_root.rank == y_root.rank:
+		# 		y_root.rank += 1 
 
 		self.num_sets -= 1
 
-		# print("Num sets: {}".format(self.num_sets))
+	def get(self, x):
+		parent = self.find(x)
+		return self.elements[parent]
 
 if __name__ == "__main__":
 	# Test the disjoint set class
