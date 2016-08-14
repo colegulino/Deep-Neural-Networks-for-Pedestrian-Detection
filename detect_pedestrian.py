@@ -6,6 +6,7 @@
 import image_segmentation
 import simularity_set
 import image_print_utils
+import histogram_utils
 
 from PIL import Image
 from pylab import *
@@ -44,9 +45,10 @@ if __name__ == "__main__":
 			reg_b = region
 			break
 
-	hist_a = sim_set.calculate_color_hist_of_region(reg_a)
+	bins = [25,25,25]
+	ranges = [0, 256, 0, 256, 0, 256]
+	hist_a = sim_set.calculate_color_hist_of_region(reg_a, bins, ranges)
 
-	for c in hist_a:
-		print(c)
-
+	# print hist_a.shape
+	# image_print_utils.print_region_histogram(reg_a, im, sim_set)
 	# image_print_utils.print_bounding_box_region_and_seg_image(reg, pixel_class, sim_set, seg_image)

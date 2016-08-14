@@ -3,6 +3,8 @@
 # 
 
 import image_segmentation
+import histogram_utils
+
 import numpy as np
 import cv2
 
@@ -172,10 +174,10 @@ class simularity_set:
 	# @param region Region to get the color histogram for
 	# @return A color histogram based on the region with 25 bins per channel
 	# 
-	def calculate_color_hist_of_region(self, region):
+	def calculate_color_hist_of_region(self, region, bins, ranges):
 		mask = self.get_region_mask(region)
-		print("Shape of image: {} | Shape of mask: {}".format(self.image.shape, mask.shape))
-		return cv2.calcHist([self.image], [0, 1, 2], mask, [25, 25, 25], [0, 256, 0, 256, 0, 256])
+		channels = [0, 1, 2]
+		return histogram_utils.get_normalized_histogram(self.image, channels, bins, ranges, mask)
 
 	# 
 	# A simularity function for regions based on size of the regions.
@@ -216,17 +218,16 @@ class simularity_set:
 	# @param region_b One region to get a simularity for
 	# @return A real valued number that describes the simularity of the two regions
 	# 
-	def s_color(self, region_a, region_b):
+	def s_color(self, region_a, region_b, method_name='intersection'):
 		a = self.disjoint_set.find(region_a)
 		b = self.disjoint_set.find(region_b)
 
-		hist_a = self.calculate_color_hist_of_region(a)
-		hist_a = hist_a.flatten()
-		hist_a = hist_a / np.linalg.norm(hist_a)
+		bins = [0, 1, 2]
+		ranges = [0, 256, 0, 256, 0, 256]
+		hist_a = self.calculate_color_hist_of_region(a, bins, ranges)
+		hist_b = self.calculate_color_hist_of_region(b, bins, ranges)
 
-		hist_b = self.calculate_color_hist_of_region(b)
-		hist_b = hist_b.flatten()
-		hist_b = hist_b / np.linalg.norm(hist_b)
+		return histogram_utils.compare_histograms(hist_a, hist_b, method_name)
 
 if __name__ == "__main__":
 	# Show the image before segmentation
