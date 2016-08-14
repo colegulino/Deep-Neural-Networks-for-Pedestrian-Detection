@@ -164,8 +164,9 @@ class simularity_set:
 	# 
 	def get_region_mask(self, region):
 		mask = (self.region_image == region).astype(int)
-		mask_im = np.array(mask * 255, dtype = np.uint8)
-		mask_im = cv2.adaptiveThreshold(mask_im, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 3, 0)
+		mask = mask * 255
+		mask_im = np.array(mask, dtype = np.uint8)
+		# mask_im = cv2.adaptiveThreshold(mask_im, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 3, 0)
 		return mask_im
 
 	# 
@@ -174,7 +175,7 @@ class simularity_set:
 	# @param region Region to get the color histogram for
 	# @return A color histogram based on the region with 25 bins per channel
 	# 
-	def calculate_color_hist_of_region(self, region, bins, ranges):
+	def calculate_color_hist_of_region(self, region, bins=[25,25,25], ranges=[0,256,0,256,0,256]):
 		mask = self.get_region_mask(region)
 		channels = [0, 1, 2]
 		return histogram_utils.get_normalized_histogram(self.image, channels, bins, ranges, mask)
@@ -222,12 +223,38 @@ class simularity_set:
 		a = self.disjoint_set.find(region_a)
 		b = self.disjoint_set.find(region_b)
 
-		bins = [0, 1, 2]
-		ranges = [0, 256, 0, 256, 0, 256]
-		hist_a = self.calculate_color_hist_of_region(a, bins, ranges)
-		hist_b = self.calculate_color_hist_of_region(b, bins, ranges)
+		hist_a = self.calculate_color_hist_of_region(a)
+		hist_b = self.calculate_color_hist_of_region(b)
 
 		return histogram_utils.compare_histograms(hist_a, hist_b, method_name)
+
+	# 
+	# A simularity for regions based on texture using SIFT features
+	# 
+	# @param region_a One region to get simularity for
+	# @param region_b One region to get simularity for
+	# @return A real valued number that describes the simularity of the two regions
+	# 
+	def s_texture(self, region_a, region_b, method_name='intersection'):
+		a = self.disjoint_set.find(region_a)
+		b = self.disjoint_set.find(region_b)
+
+		mask_a = self.get_region_mask(a)
+		mask_b = self.get_region_mask(b)
+
+		hist_a = histogram_utils.get_sift_features(self.image, mask=mask_a)
+		hist_b = histogram_utils.get_sift_features(self.image, mask=mask_b)
+
+		return histogram_utils.compare_histograms(hist_a, hist_b, method_name)
+
+	def s_regions(self, region_a, region_b, a=(1,1,1,1)):
+		if len(a) != 4:
+			raise ValueError('Size of a ({}) should be: {}'.format(len(a),4))
+
+		return a[0] * self.s_size(region_a, region_b) + \
+			   a[1] * self.s_fill(region_a, region_b) + \
+			   a[2] * self.s_color(region_a, region_b) + \
+			   a[3] * self.s_texture(region_a, region_b)
 
 if __name__ == "__main__":
 	# Show the image before segmentation

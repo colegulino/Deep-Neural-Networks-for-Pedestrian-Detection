@@ -119,6 +119,9 @@ def get_sift_features(image, sigma=1, no_bins=10, th=0.1, mask=None):
 		for i in range(3):
 			image[:,:,i] = mask * image[:,:,i]
 
+	im = Image.fromarray(image, 'RGB')
+	im.show() 
+
 	shape = image.shape
 	channels = shape[2]
 
@@ -151,11 +154,17 @@ def get_sift_features(image, sigma=1, no_bins=10, th=0.1, mask=None):
 								(gradients[channel].mag > thresholds[channel]).astype(int)
 
 	# Sum up the histograms at each pixel and concatenate the histograms from each channel
-	hist = np.array([])
+	hist = np.array([]).astype(np.float32)
 	for channel in range(channels):		
 		hist = np.append(hist, np.sum(histograms[channel], axis=(0,1)))
 
-	return hist / np.linalg.norm(hist)
+	print("HIST")
+	for val in hist:
+		print val
+	print("Norm of Hist: {}".format(np.linalg.norm(hist)))
+	hist = hist / np.linalg.norm(hist)
+
+	return np.array(hist).astype(np.float32)
 
 if __name__ == "__main__":
 	print("Testing histogram utilities.")
@@ -169,5 +178,5 @@ if __name__ == "__main__":
 	hist = get_sift_features(im)
 
 	print("L1 Norm of Histogram: {}".format(np.linalg.norm(hist)))
-	
+
 	image_print_utils.print_histogram(hist)

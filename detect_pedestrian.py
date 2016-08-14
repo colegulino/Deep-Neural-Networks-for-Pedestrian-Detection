@@ -49,6 +49,12 @@ if __name__ == "__main__":
 	ranges = [0, 256, 0, 256, 0, 256]
 	hist_a = sim_set.calculate_color_hist_of_region(reg_a, bins, ranges)
 
+	# image_print_utils.print_bounding_box_region_and_seg_image(reg_a, pixel_class, sim_set, seg_image)
+	# image_print_utils.print_bounding_box_region_and_seg_image(reg_b, pixel_class, sim_set, seg_image)
+
+	s_val = sim_set.s_regions(reg_a, reg_b)
+
+	# print("Simularity of region:{} and region:{} is: {}".format(reg_a, reg_b, s_val))
 	# print hist_a.shape
 	# image_print_utils.print_region_histogram(reg_a, im, sim_set)
 	# image_print_utils.print_bounding_box_region_and_seg_image(reg, pixel_class, sim_set, seg_image)

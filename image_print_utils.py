@@ -39,6 +39,13 @@ def print_bounding_box_region_and_seg_image(region, region_image, sim_set, seg_i
 	seg_image_mask.add_patch(rect)
 	show()
 
+# 
+# Print the color histogram of a region in an image
+# 
+# @param region Region of an image to calculate the histogram for
+# @param image Image to calculate histogram for
+# @param sim_set Simularity set that contains the region information
+# 
 def print_region_histogram(region, image, sim_set):
 	# Example from: http://docs.opencv.org/3.1.0/d1/db7/tutorial_py_histogram_begins.html#gsc.tab=0
 	colors = ('b', 'g', 'r')
@@ -52,6 +59,15 @@ def print_region_histogram(region, image, sim_set):
 	plt.plot(b_hist, 'b')
 	plt.show()
 
+# 
+# Plot a histogram 
+# 
+# @param hist Histogram to plot
+# @param color Color of the plot
+# @param title Title of the plot
+# @param xlabel Independent axis label
+# @param ylabel Dependent axis label
+# 
 def print_histogram(hist, color='r', title='Histogram', xlabel='Bin', ylabel='Number'):
 	plt.plot(hist, color)
 	plt.xlim([0, len(hist)])
