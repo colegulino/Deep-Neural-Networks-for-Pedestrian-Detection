@@ -30,13 +30,22 @@ comparison_methods = \
 # 
 def check_color_hist_params(image, channels, bins, ranges, mask):
 	if max(channels) > image.shape[0] - 1:
-		raise ValueError("Max channel requested ({}) is larger than channels in image: {}".format(max(channels), image.shape[0]))
+		error_message = "Max channel requested ({}) is larger than channels in image: {}"
+		error_message = error_message.format(max(channels), image.shape[0])
+		raise ValueError(error_message)
 	if len(channels) != len(bins):
-		raise ValueError("Length of channels ({}) does not equal length of bins ({}):".format(len(channels), len(bins)))
+		error_message = "Length of channels ({}) does not equal length of bins ({}):"
+		error_message = error_message.format(len(channels), len(bins))
+		raise ValueError(error_message)
 	if (2*len(channels)) != len(ranges):
-		raise ValueError("Size of range ({}) is not appropriate size ({}).".format(len(ranges), 2*len(channels)))
-	if mask.shape[:1] != image.shape[:1] and mask != None:
-		raise ValueError("Shape of mask ({}) not same shape as image ({})".format(mask.shape[:1], image.shape[:1]))
+		error_message = "Size of range ({}) is not appropriate size ({})."
+		error_message = error_message.format(len(ranges), 2*len(channels))
+		raise ValueError(error_message)
+	if mask != None:
+		if mask.shape[:1] != image.shape[:1]:
+			error_message = "Shape of mask ({}) not same shape as image ({})"
+			error_message = error_message.format(mask.shape[:1], image.shape[:1])
+			raise ValueError(error_message)
 
 # 
 # Function that compares two histograms
@@ -48,6 +57,33 @@ def check_color_hist_params(image, channels, bins, ranges, mask):
 # 
 def compare_histograms(hist_a, hist_b, method_name='intersection'):
 	return cv2.compareHist(hist_a, hist_b, comparison_methods[method_name])
+
+# 
+# Function that gets the intersection between two histograms normalized by the size
+# of the two regions
+# 
+# @param hist_a One histogram to get an intersection for 
+# @param a_size Size of the region that hist_a is over
+# @param hist_b One histogram to get an intersection for
+# @param b_size Size of the region that hist_b is over
+# @return Real valued number between 0 and 1 that represents the intersection of 
+# hist_a and hist_b
+# 
+def normalized_histogram_intersection(hist_a, a_size, hist_b, b_size):
+	if len(hist_a) != len(hist_b):
+		error_message = "Histogram A (len:{}) and Histogram B (len:{}) are not same size"
+		error_message = error_message.format(len(hist_a), len(hist_b))
+		raise ValueError(error_message)
+
+	binary_mask = (hist_a > 0).astype(int) & (hist_b > 0).astype(int)
+
+	hist_a_masked = np.multiply(hist_a, binary_mask)
+	hist_b_masked = np.multiply(hist_b, binary_mask)
+
+	a_sizes = a_size * np.ones(hist_a.shape)
+	b_sizes = b_size * np.ones(hist_b.shape)
+
+	return float(np.dot(a_sizes, hist_a_masked) + np.dot(b_sizes, hist_b_masked)) / (a_size + b_size)	
 
 # 
 # Function to get an L1 normalized color histogram
@@ -62,7 +98,8 @@ def compare_histograms(hist_a, hist_b, method_name='intersection'):
 def get_normalized_histogram(image, channels=[0,1,2], bins=[25,25,25], ranges=[0,256,0,256,0,256], mask=None):
 	check_color_hist_params(image, channels, bins, ranges, mask)
 	hist = cv2.calcHist([image], channels, mask, bins, ranges)
-	hist = cv2.normalize(hist).flatten()
+	hist = hist.flatten()
+	hist = hist / np.linalg.norm(hist, ord=1)
 	return hist
 
 # 
@@ -116,8 +153,7 @@ def get_rgb_histograms(image, bins=[256], ranges=[0,256], mask=None):
 def get_sift_features(image, sigma=1, no_bins=10, th=0.1, mask=None):
 	# Apply mask if there is one
 	im = np.copy(image)
-	# if mask != None:
-	if True:
+	if mask != None:
 		for i in range(3):
 			im[:,:,i] = mask * image[:,:,i]
 
@@ -160,21 +196,40 @@ def get_sift_features(image, sigma=1, no_bins=10, th=0.1, mask=None):
 	if(np.linalg.norm(hist) == 0):
 		print("Norm of the histogram = 0. Histogram is invalid.")
 
-	hist = hist / np.linalg.norm(hist)
+	hist = hist / np.linalg.norm(hist, ord=1)
 
 	return np.array(hist).astype(np.float32)
 
 if __name__ == "__main__":
 	print("Testing histogram utilities.")
 
-	# image_name = "large_pedestrian.jpg"
-	image_name = "treeAndHorse.jpg"
-	im = Image.open(image_name)
-	im = im.convert('RGB')
-	im = np.array(im)
+	image_name1 = "treeAndHorse.jpg"
+	im1 = Image.open(image_name1)
+	im1 = im1.convert('RGB')
+	im1 = np.array(im1)
 
-	hist = get_sift_features(im)
+	image_name2 = "large_pedestrian.jpg"
+	im2 = Image.open(image_name2)
+	im2 = im2.convert('RGB')
+	im2 = np.array(im2)
 
-	print("L1 Norm of Histogram: {}".format(np.linalg.norm(hist)))
+	hist1 = get_normalized_histogram(im1)
+	h1, w1, c1 = im1.shape
+	size_1 = h1 * w1
+
+	hist2 = get_normalized_histogram(im2)
+	h2, w2, c2 = im2.shape
+	size_2 = h2 * w2
+
+	image_print_utils.print_histogram(hist1)
+	image_print_utils.print_histogram(hist2)
+
+	hist_intersection = normalized_histogram_intersection(hist1, size_1, hist2, size_2)
+	print("Histogram Comparison Value: {}".format(hist_intersection)) 
+	print("Histogram A bins: {} | Histogram B bins: {}".format(len(hist1), len(hist2)))
+
+	hist = get_sift_features(im1)
+
+	print("L1 Norm of Histogram: {}".format(np.linalg.norm(hist, ord=1)))
 
 	image_print_utils.print_histogram(hist)

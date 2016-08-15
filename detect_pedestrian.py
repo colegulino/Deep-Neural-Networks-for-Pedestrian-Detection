@@ -35,12 +35,6 @@ if __name__ == "__main__":
 
 	elems = disjoint_set.elements
 
-	for key in elems:
-		parent = disjoint_set.elements[key].parent
-		# print("Region: {} | Size: {}".format(disjoint_set.elements[parent].parent, disjoint_set.elements[parent].size))
-		if disjoint_set.elements[parent].size == 1:
-			print("Size of 1 for region: {}".format(parent))
-
 	count = 0
 	reg_a = None
 	reg_b = None
