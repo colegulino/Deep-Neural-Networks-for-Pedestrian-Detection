@@ -81,18 +81,15 @@ class image_disjoint_set:
 			y_root.parent = x_root.parent
 			x_root.size += y_root.size
 			x_root.rank = x_root.rank + 1
-		
-		# if x_root.rank > y_root.rank:
-		# 	y_root.parent = x_root.parent
-		# 	x_root.size += y_root.size
-		# else:
-		# 	x_root.parent = y_root.parent
-		# 	y_root.size += x_root.size
-		# 	if x_root.rank == y_root.rank:
-		# 		y_root.rank += 1 
 
 		self.num_sets -= 1
 
+	# 
+	# Find the parent of a region and return the disjoint set element of the parent
+	# 
+	# @param x Index to search for
+	# @return Disjoint set element for the parent of x
+	#  
 	def get(self, x):
 		parent = self.find(x)
 		return self.elements[parent]

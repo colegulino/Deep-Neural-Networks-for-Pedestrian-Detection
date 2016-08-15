@@ -4,6 +4,7 @@
 
 import image_segmentation
 import histogram_utils
+import image_print_utils
 
 import numpy as np
 import cv2
@@ -206,7 +207,7 @@ class simularity_set:
 		bbox_a = self.create_bounding_box(a.parent)
 		bbox_b = self.create_bounding_box(b.parent)
 		bbox_ab = self.combine_bounding_boxes(bbox_a, bbox_b)
-		
+
 		return 1 - (float(len(bbox_ab) - a.size - b.size) / self.image_size)
 
 	# 
@@ -217,13 +218,13 @@ class simularity_set:
 	# @return A real valued number that describes the simularity of the two regions
 	# 
 	def s_color(self, region_a, region_b, method_name='intersection'):
-		a = self.disjoint_set.find(region_a)
-		b = self.disjoint_set.find(region_b)
+		a = self.disjoint_set.get(region_a)
+		b = self.disjoint_set.get(region_b)
 
-		hist_a = self.calculate_color_hist_of_region(a)
-		hist_b = self.calculate_color_hist_of_region(b)
+		hist_a = self.calculate_color_hist_of_region(a.parent)
+		hist_b = self.calculate_color_hist_of_region(b.parent)
 
-		return histogram_utils.compare_histograms(hist_a, hist_b, method_name)
+		return histogram_utils.normalized_histogram_intersection(hist_a, a.size, hist_b, b.size)
 
 	# 
 	# A simularity for regions based on texture using SIFT features
