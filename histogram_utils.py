@@ -1,4 +1,6 @@
+# 
 # Library for generating and comparing histograms
+# 
 
 import image_utils
 import image_print_utils

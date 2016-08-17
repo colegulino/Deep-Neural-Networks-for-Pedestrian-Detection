@@ -1,0 +1,4 @@
+segmentation_params:
+  sigma: 0.5
+  min_size: 100
+  th: 3000  

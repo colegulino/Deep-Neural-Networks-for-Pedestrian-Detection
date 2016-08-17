@@ -1,3 +1,10 @@
+# 
+# Here is a general python script for running a prototype of the algorithm described in
+# Effecient Graph-Based Image Segmentation by Felzenzwalb and Huttenlocher
+# Link: https://cs.brown.edu/~pff/papers/seg-ijcv.pdf
+# Source Code Link: http://cs.brown.edu/~pff/segment/ 
+# 
+
 # Random int
 from random import randint
 
@@ -101,7 +108,7 @@ def generate_graph(image, weight_fxn):
 # 
 # @param image The image to segment
 # @param sigma Gaussian filter sigma
-# @param th Threshold 
+# @param th Threshold for region segmentation. The larger this is, the larger the initial regions are. 
 # @param min_size Minimum component size
 # @return A segmented image and the number of current connected components
 # 

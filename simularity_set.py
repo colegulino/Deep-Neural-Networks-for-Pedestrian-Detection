@@ -40,16 +40,13 @@ class simularity_set:
 
 		# Find the sets of neighboring regions
 		self.find_neighboring_regions()
-		print("Length of simularity set: {}".format(len(self.sim_set)))
 
 		# Get the bounding boxes for each region
 		self.bounding_box = {}
 		for region in self.region_set:
 			self.bounding_box[region] = self.create_bounding_box(region)
 
-		print("Getting Simularities of Regions...")
 		self.get_region_simularities()
-		print("Got Simularities of Regions.")
 
 	# 
 	# Returns the length of the regions set (number of regions currently available)
@@ -283,10 +280,6 @@ class simularity_set:
 		if len(a) != 4:
 			raise ValueError('Size of a ({}) should be: {}'.format(len(a),4))
 
-		# print("S_Size: {}".format(self.s_size(region_a, region_b)))
-		# print("S_Fill: {}".format(self.s_fill(region_a, region_b)))
-		# print("S_Color: {}".format(self.s_color(region_a, region_b)))
-		# print("S_Texture: {}".format(self.s_texture(region_a, region_b)))
 		return a[0] * self.s_size(region_a, region_b) + \
 			   a[1] * self.s_fill(region_a, region_b) + \
 			   a[2] * self.s_color(region_a, region_b) + \
@@ -298,7 +291,6 @@ class simularity_set:
 	def get_region_simularities(self):
 		for s in self.sim_set.keys():
 			simul = self.s_regions(s[0], s[1])
-			# print("Region: {} and Region: {} | Simularity: {}".format(s[0],s[1],simul))
 			self.sim_set[s] = simul
 
 	# 
@@ -306,6 +298,7 @@ class simularity_set:
 	# 
 	# @param region_a One of the regions to merge
 	# @param region_b One of the regions to merge
+	# @return Bounding box shape for the new region
 	# 
 	def merge_regions(self, region_a, region_b):
 		# Update the disjoint set by joining the two regions
@@ -349,9 +342,7 @@ class simularity_set:
 		del self.bounding_box[region_b]
 		self.bounding_box[region_a] = self.create_bounding_box(region_a)
 
-		image_print_utils.print_bounding_box_region_and_seg_image(region_a, self.region_image, \
-																  self, Image.fromarray(self.seg_image, 'RGB'))
-
+		return self.bounding_box[region_a]
 	# 
 	# Function that returns the two regions that are the most similiar according to the function
 	# s_regions
@@ -360,7 +351,6 @@ class simularity_set:
 	# 
 	def get_most_similar_regions(self):
 		regions, simul = max(self.sim_set.items(), key=operator.itemgetter(1))
-		print("Simularity: {}".format(simul))
 		return regions
 
 if __name__ == "__main__":
