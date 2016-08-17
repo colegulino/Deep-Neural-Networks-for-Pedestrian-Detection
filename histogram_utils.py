@@ -221,8 +221,8 @@ if __name__ == "__main__":
 	h2, w2, c2 = im2.shape
 	size_2 = h2 * w2
 
-	image_print_utils.print_histogram(hist1)
-	image_print_utils.print_histogram(hist2)
+	# image_print_utils.print_histogram(hist1)
+	# image_print_utils.print_histogram(hist2)
 
 	hist_intersection = normalized_histogram_intersection(hist1, size_1, hist2, size_2)
 	print("Histogram Comparison Value: {}".format(hist_intersection)) 
@@ -231,5 +231,4 @@ if __name__ == "__main__":
 	hist = get_sift_features(im1)
 
 	print("L1 Norm of Histogram: {}".format(np.linalg.norm(hist, ord=1)))
-
-	image_print_utils.print_histogram(hist)
+	# image_print_utils.print_histogram(hist)
