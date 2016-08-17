@@ -6,8 +6,10 @@ import image_segmentation
 import histogram_utils
 import image_print_utils
 
+from PIL import Image
 import numpy as np
 import cv2
+import operator
 
 class bounding_box:
 	def __init__(self, region, row_start, col_start, height, width):
@@ -24,39 +26,30 @@ class bounding_box:
 		return self.height * self.width
 
 class simularity_set:
-	def __init__(self, region_image, image, disjoint_set):
+	def __init__(self, region_image, image, disjoint_set, seg_image):
 		self.region_image = region_image
 
 		self.region_set = set()
-		self.sim_set = set()
+		self.sim_set = {}
 		self.image = image
 		self.disjoint_set = disjoint_set
+		self.seg_image = np.array(seg_image)
 
 		self.height, self.width = region_image.shape
 		self.image_size = self.height * self.width
 
 		# Find the sets of neighboring regions
-		for row in range(self.height):
-			for col in range(self.width):
-				current_region = self.region_image[row, col]
-				if(col + 1 < self.width):
-					neighbor_region = self.region_image[row, col + 1]
-					self.add_set(current_region, neighbor_region)
-				if(row + 1 < self.height):
-					neighbor_region = self.region_image[row + 1, col]
-					self.add_set(current_region, neighbor_region)
-				if((col + 1 < self.width) and (row + 1 < self.height)):
-					neighbor_region = self.region_image[row + 1, col + 1]
-					self.add_set(current_region, neighbor_region)
-				if((col + 1 < self.width) and (row > 0)):
-					neighbor_region = self.region_image[row - 1, col + 1]
-					self.add_set(current_region, neighbor_region)
-
-		self.bounding_box = {}
+		self.find_neighboring_regions()
+		print("Length of simularity set: {}".format(len(self.sim_set)))
 
 		# Get the bounding boxes for each region
+		self.bounding_box = {}
 		for region in self.region_set:
 			self.bounding_box[region] = self.create_bounding_box(region)
+
+		print("Getting Simularities of Regions...")
+		self.get_region_simularities()
+		print("Got Simularities of Regions.")
 
 	# 
 	# Returns the length of the regions set (number of regions currently available)
@@ -67,6 +60,38 @@ class simularity_set:
 		return len(self.region_set)
 
 	# 
+	# Function that finds all the neighboring regions in the image
+	# 
+	def find_neighboring_regions(self):
+		for row in range(self.height):
+			for col in range(self.width):
+				current_region = self.region_image[row, col]
+				if col + 1 < self.width:
+					neighbor_region = self.region_image[row, col + 1]
+					self.add_set(current_region, neighbor_region)
+				if col - 1 > 0:
+					neighbor_region = self.region_image[row, col - 1]
+					self.add_set(current_region, neighbor_region)
+				if row + 1 < self.height:
+					neighbor_region = self.region_image[row + 1, col]
+					self.add_set(current_region, neighbor_region)
+				if row - 1 > 0:
+					neighbor_region = self.region_image[row - 1, col]
+					self.add_set(current_region, neighbor_region)
+				if col - 1 > 0 and row - 1 > 0:
+					neighbor_region = self.region_image[row - 1, col - 1]
+					self.add_set(current_region, neighbor_region)
+				if col - 1 > 0 and row + 1 < self.height:
+					neighbor_region = self.region_image[row + 1, col - 1]
+					self.add_set(current_region, neighbor_region)
+				if col + 1 < self.width and row - 1 > 0:
+					neighbor_region = self.region_image[row - 1, col + 1]
+					self.add_set(current_region, neighbor_region)
+				if col + 1 < self.width and row + 1 < self.height:
+					neighbor_region = self.region_image[row + 1, col + 1]
+					self.add_set(current_region, neighbor_region)
+
+	# 
 	# Allows you to add a set of regions to the simularity set
 	# 
 	# @param region_a One region in the set
@@ -74,8 +99,9 @@ class simularity_set:
 	# 
 	def add_set(self, region_a, region_b):
 		if region_a != region_b:
-			if (region_b, region_a) not in self.sim_set:
-				self.sim_set.add((region_a, region_b))
+			if (region_a, region_b) not in self.sim_set.keys() and \
+			   (region_b, region_a) not in self.sim_set.keys():
+				self.sim_set[(region_a, region_b)] = 0
 			self.region_set.add(region_a)
 			self.region_set.add(region_b)
 
@@ -102,14 +128,14 @@ class simularity_set:
 	# 
 	def remove_set(self, s):
 		if s in self.sim_set:
-			self.sim_set.remove(s)
+			self.sim_set.pop(s, None)
 		if (s[1], s[0]) in self.sim_set:
-			self.sim_set.remove((s[1], s[0]))
+			self.sim_set.pop((s[1], s[0]), None)
 
 		# Determine if there are any more regions from set in the sim_set	
-		if({item for item in self.sim_set if s[0] in item} == set()):
+		if({key for key, value in self.sim_set.items() if s[0] in key} == set()):
 			self.region_set.remove(s[0])
-		if({item for item in self.sim_set if s[1] in item} == set()):
+		if({key for key, value in self.sim_set.items() if s[1] in key} == set()):
 			self.region_set.remove(s[1])
 
 	# 
@@ -245,18 +271,97 @@ class simularity_set:
 
 		return histogram_utils.compare_histograms(hist_a, hist_b, method_name)
 
+	# 
+	# Find the simularity between two regions
+	# 
+	# @param region_a One region to find a simularity for
+	# @param region_b One region to find a simularity for
+	# @param a A tuple that is a binary mask on which parameters to include
+	# @return A real valued number that describes the simularity of the two regions
+	# 
 	def s_regions(self, region_a, region_b, a=(1,1,1,1)):
 		if len(a) != 4:
 			raise ValueError('Size of a ({}) should be: {}'.format(len(a),4))
 
-		print("S_Size: {}".format(self.s_size(region_a, region_b)))
-		print("S_Fill: {}".format(self.s_fill(region_a, region_b)))
-		print("S_Color: {}".format(self.s_color(region_a, region_b)))
-		print("S_Texture: {}".format(self.s_texture(region_a, region_b)))
+		# print("S_Size: {}".format(self.s_size(region_a, region_b)))
+		# print("S_Fill: {}".format(self.s_fill(region_a, region_b)))
+		# print("S_Color: {}".format(self.s_color(region_a, region_b)))
+		# print("S_Texture: {}".format(self.s_texture(region_a, region_b)))
 		return a[0] * self.s_size(region_a, region_b) + \
 			   a[1] * self.s_fill(region_a, region_b) + \
 			   a[2] * self.s_color(region_a, region_b) + \
 			   a[3] * self.s_texture(region_a, region_b)
+
+	# 
+	# Find and record the simularities between all of the regions in the set
+	# 
+	def get_region_simularities(self):
+		for s in self.sim_set.keys():
+			simul = self.s_regions(s[0], s[1])
+			# print("Region: {} and Region: {} | Simularity: {}".format(s[0],s[1],simul))
+			self.sim_set[s] = simul
+
+	# 
+	# Function to merge two regions together
+	# 
+	# @param region_a One of the regions to merge
+	# @param region_b One of the regions to merge
+	# 
+	def merge_regions(self, region_a, region_b):
+		# Update the disjoint set by joining the two regions
+		self.disjoint_set.union(region_a, region_b)
+		parent_region = self.disjoint_set.find(region_a)
+		if parent_region == region_b:
+			region_a, region_b = region_b, region_a 
+
+		# Get all sets that contain region_a or region_b
+		neighbor_set = {key for key, value in self.sim_set.items() \
+						if region_a in key or region_b in key}
+
+		# Replace all the sets of neighbor regions that contain region_a or region_b
+		# with a set including the new parent region and the other neighbor 
+		for neighbor in neighbor_set:
+			del self.sim_set[neighbor]
+			if not (region_a in neighbor and region_b in neighbor):
+				reg1, reg2 = neighbor
+				if reg1 == region_a or reg1 == region_b:
+					self.sim_set[(region_a, reg2)] = self.s_regions(region_a, reg2)
+				else:
+					self.sim_set[(region_a, reg1)] = self.s_regions(region_a, reg1)
+
+		# Update the segmented image and region_image
+		indices_a = self.get_indices_of_region(region_a)
+		row = indices_a[0,0]
+		col = indices_a[0,1]
+		color = self.seg_image[row, col, :]
+
+		indices_b = self.get_indices_of_region(region_b)
+		for ind in indices_b:
+			row = ind[0]
+			col = ind[1]
+			self.seg_image[row, col, 0] = color[0]	
+			self.seg_image[row, col, 1] = color[1]	
+			self.seg_image[row, col, 2] = color[2]
+
+			self.region_image[row, col] = region_a
+
+		# Update the bounding boxes
+		del self.bounding_box[region_b]
+		self.bounding_box[region_a] = self.create_bounding_box(region_a)
+
+		image_print_utils.print_bounding_box_region_and_seg_image(region_a, self.region_image, \
+																  self, Image.fromarray(self.seg_image, 'RGB'))
+
+	# 
+	# Function that returns the two regions that are the most similiar according to the function
+	# s_regions
+	# 
+	# @return A pair of regions that denote the two regions with the highest similarity
+	# 
+	def get_most_similar_regions(self):
+		regions, simul = max(self.sim_set.items(), key=operator.itemgetter(1))
+		print("Simularity: {}".format(simul))
+		return regions
 
 if __name__ == "__main__":
 	# Show the image before segmentation
@@ -264,9 +369,9 @@ if __name__ == "__main__":
 	print("Testing simularity set")
 
 	region_image = np.array([[1, 2, 3], [4, 5, 6], [4, 4, 6]])
-	ss = simularity_set(region_image)
+	ss = simularity_set(region_image, None, None)
 
-	region_set = ss.regions()
+	region_set = ss.get_regions()
 	sim_set = ss.get_sim_set()
 	ss.remove_set((1,2))
 	ss.remove_set((1,4))

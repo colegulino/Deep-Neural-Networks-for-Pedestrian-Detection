@@ -156,7 +156,7 @@ def segment_image(image, sigma, th, min_size):
 			disjoint_set.union(a,b)
 	
 	print("Finished generating Disjoint set.")
-	print("Number of sets generated: {}", disjoint_set.num_sets)
+	print("Number of sets generated: {}".format(disjoint_set.num_sets))
 	colors = {}
 	for i in range(width * height):
 		colors[i] = (randint(0,255), randint(0,255), randint(0,255))

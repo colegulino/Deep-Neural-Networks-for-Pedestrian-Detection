@@ -31,21 +31,38 @@ if __name__ == "__main__":
 	seg_image, pixel_class, disjoint_set = image_segmentation.segment_image(im, sigma, th, min_size)
 
 	print("Get simularity set")
-	sim_set = simularity_set.simularity_set(region_image=pixel_class, image=im, disjoint_set=disjoint_set)
+	sim_set = simularity_set.simularity_set(region_image=pixel_class, image=im, \
+											disjoint_set=disjoint_set, seg_image=seg_image)
 
-	elems = disjoint_set.elements
+	# s_set = sim_set.sim_set
+	# stuff = None
+	# for s in s_set:
+	# 	stuff = s
+	# 	break
 
-	count = 0
-	reg_a = None
-	reg_b = None
-	for region in sim_set.region_set:
-		count += 1
-		if count == 5:
-			reg_a = region
+	# reg_a, reg_b = stuff
+	# reg_a, reg_b = sim_set.get_most_similar_regions()
+	# image_print_utils.print_bounding_box_region_and_seg_image(reg_a, sim_set.region_image, sim_set, seg_image)
+	# image_print_utils.print_bounding_box_region_and_seg_image(reg_b, sim_set.region_image, sim_set, seg_image)
 
-		if count == 6:
-			reg_b = region
-			break
+	# sim_set.merge_regions(reg_a, reg_b)
+	while sim_set.disjoint_set.num_sets > 1:
+		reg_a, reg_b = sim_set.get_most_similar_regions()
+		sim_set.merge_regions(reg_a, reg_b)
+
+	# elems = disjoint_set.elements
+
+	# count = 0
+	# reg_a = None
+	# reg_b = None
+	# for region in sim_set.region_set:
+	# 	count += 1
+	# 	if count == 5:
+	# 		reg_a = region
+
+	# 	if count == 6:
+	# 		reg_b = region
+	# 		break
 
 	# bins = [25,25,25]
 	# ranges = [0, 256, 0, 256, 0, 256]
@@ -55,9 +72,9 @@ if __name__ == "__main__":
 	# image_print_utils.print_bounding_box_region_and_seg_image(reg_a, sim_set.region_image, sim_set, seg_image)
 	# image_print_utils.print_bounding_box_region_and_seg_image(reg_b, sim_set.region_image, sim_set, seg_image)
 
-	s_val = sim_set.s_regions(reg_a, reg_b)
+	# s_val = sim_set.s_regions(reg_a, reg_b)
 
-	print("Simularity of region:{} and region:{} is: {}".format(reg_a, reg_b, s_val))
+	# print("Simularity of region:{} and region:{} is: {}".format(reg_a, reg_b, s_val))
 	# print hist_a.shape
 	# image_print_utils.print_region_histogram(reg_b, im, sim_set)
 	# image_print_utils.print_bounding_box_region_and_seg_image(reg, pixel_class, sim_set, seg_image)
